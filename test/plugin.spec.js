@@ -193,8 +193,8 @@ describe('Plugin', () => {
 
   it('Does work for multiple table configuration #3', () => {
     let dynamoDBdescribeTimeToLiveSpy = jest.fn()
-        .mockImplementationOnce((_, cb) => cb(null, { TimeToLiveDescription: { TimeToLiveStatus: false }}))
-        .mockImplementationOnce((_, cb) => cb(null, { TimeToLiveDescription: { TimeToLiveStatus: 'ENABLED' }}))
+        .mockImplementationOnce((_, cb) => cb(null, { TimeToLiveDescription: { TimeToLiveStatus: false } }))
+        .mockImplementationOnce((_, cb) => cb(null, { TimeToLiveDescription: { TimeToLiveStatus: 'ENABLED' } }))
 
     let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
 

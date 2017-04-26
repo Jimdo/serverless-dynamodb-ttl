@@ -24,7 +24,7 @@ class Plugin {
 
     if (list.length === 0) {
       this.serverless.cli.log('Skipping TTL setting(s) for DynamoDB: no configuration found')
-      
+
       return Promise.resolve()
     }
 
