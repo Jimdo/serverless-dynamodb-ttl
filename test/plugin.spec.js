@@ -30,8 +30,8 @@ describe('Plugin', () => {
 
     const test = new Plugin(config)
 
-    expect(test.tables).toContainEqual({ table: 'my-table-1', field: 'my-field-1' })
-    expect(test.tables).toContainEqual({ table: 'my-table-2', field: 'my-field-2' })
+    expect(test.configuration()).toContainEqual({ table: 'my-table-1', field: 'my-field-1' })
+    expect(test.configuration()).toContainEqual({ table: 'my-table-2', field: 'my-field-2' })
   })
 
   it('Updates TTL setting if not alreadt set', () => {

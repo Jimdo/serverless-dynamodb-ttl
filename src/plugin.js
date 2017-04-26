@@ -25,7 +25,7 @@ class Plugin {
     }
 
     return Promise.all(
-      this.tables.map(
+      this.configuration().map(
         data => this.check(data.table).then(
           enabled => enabled || this.enable(data)
         )
@@ -57,7 +57,7 @@ class Plugin {
     ).promise()
   }
 
-  get tables () {
+  configuration () {
     return this.serverless.service.custom.dynamodb.ttl
   }
 }
