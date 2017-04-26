@@ -1,14 +1,11 @@
 'use strict'
 
-var AWS = require('aws-sdk-mock');
+var AWS = require('aws-sdk-mock')
 const Plugin = require('../')
 
 describe('Plugin', () => {
-  let dynamoDBdescribeTimeToLiveSpy
-  let dynamoDBupdateTimeToLiveSpy
-
   afterEach(() => {
-    AWS.restore('DynamoDB');
+    AWS.restore('DynamoDB')
   })
 
   it('reads configuration', () => {
@@ -168,7 +165,7 @@ describe('Plugin', () => {
   it('Does work for multiple table configuration #3', () => {
     let counter = 0
 
-    let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, { TimeToLiveDescription: { TimeToLiveStatus: counter++ == 1 ? 'ENABLED' : false } }))
+    let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, { TimeToLiveDescription: { TimeToLiveStatus: counter++ === 1 ? 'ENABLED' : false } }))
     let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
 
     AWS.mock('DynamoDB', 'describeTimeToLive', dynamoDBdescribeTimeToLiveSpy)
@@ -200,5 +197,4 @@ describe('Plugin', () => {
       }
     )
   })
-
 })

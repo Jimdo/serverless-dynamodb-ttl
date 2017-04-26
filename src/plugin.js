@@ -20,7 +20,7 @@ class Plugin {
       return Promise.resolve()
     }
 
-    if (this.serverless.cli) { 
+    if (this.serverless.cli) {
       this.serverless.cli.log('Enabling TTL setting(s) for DynamoDB')
     }
 
