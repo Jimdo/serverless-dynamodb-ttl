@@ -44,6 +44,12 @@ That's it! After the next deployment serverless will make sure to configure your
 
 Feel free to use the code, it's released using the [MIT license](https://github.com/Jimdo/serverless-dynamodb-ttl/blob/master/LICENSE.md).
 
+## Contributors
+
+- [Oleksii Zeleniuk](https://github.com/alexzelenuyk)
+- [Sebastian Müller](https://github.com/sbstjn)
+
 ## Contribution
 
 Feel free to contribute to this project! Thanks 😘
+
