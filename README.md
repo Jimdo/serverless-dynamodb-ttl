@@ -28,7 +28,7 @@ plugins:
   - serverless-dynamodb-ttl
 ```
 
-Configure alarms in `serverless.yml`:
+Configure TTL in `serverless.yml`:
 
 ```yaml
 custom:
