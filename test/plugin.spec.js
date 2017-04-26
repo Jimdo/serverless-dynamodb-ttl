@@ -10,6 +10,7 @@ describe('Plugin', () => {
 
   it('reads configuration', () => {
     const config = {
+      cli: { log: () => {} },
       service: {
         custom: {
           dynamodb: {
@@ -34,6 +35,30 @@ describe('Plugin', () => {
     expect(test.configuration()).toContainEqual({ table: 'my-table-2', field: 'my-field-2' })
   })
 
+  it('Works without configuration', () => {
+    let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
+    let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
+
+    AWS.mock('DynamoDB', 'describeTimeToLive', dynamoDBdescribeTimeToLiveSpy)
+    AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
+
+    const config = {
+      cli: { log: () => {} },
+      service: {
+        custom: {
+          dynamodb: { }
+        }
+      }
+    }
+
+    return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
+      () => {
+        expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(0)
+        expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(0)
+      }
+    )
+  })
+
   it('Updates TTL setting if not alreadt set', () => {
     let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, { TimeToLiveDescription: { TimeToLiveStatus: false } }))
     let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
@@ -42,6 +67,7 @@ describe('Plugin', () => {
     AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
 
     const config = {
+      cli: { log: () => {} },
       service: {
         custom: {
           dynamodb: {
@@ -72,6 +98,7 @@ describe('Plugin', () => {
     AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
 
     const config = {
+      cli: { log: () => {} },
       service: {
         custom: {
           dynamodb: {
@@ -102,6 +129,7 @@ describe('Plugin', () => {
     AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
 
     const config = {
+      cli: { log: () => {} },
       service: {
         custom: {
           dynamodb: {
@@ -136,6 +164,7 @@ describe('Plugin', () => {
     AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
 
     const config = {
+      cli: { log: () => {} },
       service: {
         custom: {
           dynamodb: {
@@ -172,6 +201,7 @@ describe('Plugin', () => {
     AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
 
     const config = {
+      cli: { log: () => {} },
       service: {
         custom: {
           dynamodb: {

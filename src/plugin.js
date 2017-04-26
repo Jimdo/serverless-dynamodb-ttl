@@ -20,9 +20,15 @@ class Plugin {
       return Promise.resolve()
     }
 
-    if (this.serverless.cli) {
-      this.serverless.cli.log('Enabling TTL setting(s) for DynamoDB')
+    const list = this.configuration()
+
+    if (list.length === 0) {
+      this.serverless.cli.log('Skipping TTL setting(s) for DynamoDB: no configuration found')
+      
+      return Promise.resolve()
     }
+
+    this.serverless.cli.log('Enabling TTL setting(s) for DynamoDB')
 
     return Promise.all(
       this.configuration().map(
@@ -31,7 +37,7 @@ class Plugin {
         )
       )
     ).catch(
-      error => this.serverless.cli && this.serverless.cli.log(util.format('Failed to set TTL for DynamoDB: %s', error))
+      error => this.serverless.cli.log(util.format('Failed to set TTL for DynamoDB: %s', error))
     )
   }
 
@@ -58,7 +64,9 @@ class Plugin {
   }
 
   configuration () {
-    return this.serverless.service.custom.dynamodb.ttl
+    if (this.serverless && this.serverless.service && this.serverless.service.custom && this.serverless.service.custom.dynamodb) {
+      return this.serverless.service.custom.dynamodb.ttl || []
+    }
   }
 }
 
