@@ -1,6 +1,6 @@
 {
   "name": "serverless-dynamodb-ttl",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Serverless plugin to configure DynamoDB TTL",
   "main": "src/plugin.js",
   "license": "MIT",
