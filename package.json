@@ -1,0 +1,43 @@
+{
+  "name": "serverless-dynamodb-ttl",
+  "description": "Serverless plugin to configure DynamoDB TTL",
+  "main": "src/plugin.js",
+  "license": "ISC",
+  "author": "",
+  "scripts": {
+    "test": "jest test",
+    "test:cover": "jest test --coverage",
+    "lint": "standard | snazzy"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jimdo/serverless-dynamodb-ttl.git"
+  },
+  "keywords": [
+    "serverless",
+    "plugin",
+    "dynamodb",
+    "aws",
+    "ttl"
+  ],
+  "bugs": {
+    "url": "https://github.com/Jimdo/serverless-dynamodb-ttl/issues"
+  },
+  "homepage": "https://github.com/Jimdo/serverless-dynamodb-ttl#readme",
+  "dependencies": {
+    "coveralls": "^2.13.0",
+    "jest": "^19.0.2",
+    "snazzy": "^7.0.0",
+    "standard": "^10.0.2"
+  },
+  "standard": {
+    "envs": [
+      "node",
+      "jest"
+    ],
+    "ignore": [
+      "node_modules/",
+      "coverage"
+    ]
+  }
+}
