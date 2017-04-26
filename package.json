@@ -3,8 +3,8 @@
   "version": "0.0.2",
   "description": "Serverless plugin to configure DynamoDB TTL",
   "main": "src/plugin.js",
-  "license": "ISC",
-  "author": "",
+  "license": "MIT",
+  "author": "Sebastian Müller <sebastian.mueller@jimdo.com>",
   "scripts": {
     "test": "jest test",
     "test:cover": "jest test --coverage",
