@@ -51,5 +51,19 @@ Feel free to use the code, it's released using the [MIT license](https://github.
 
 ## Contribution
 
+Run unit tests
+```bash
+$ yarn test
+# or
+$ npm test
+```
+
+Lint code
+```bash
+$ yarn lint
+# or
+$ npm lint
+```
+
 Feel free to contribute to this project! Thanks 😘
 
