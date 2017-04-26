@@ -39,5 +39,9 @@
       "node_modules/",
       "coverage"
     ]
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.45.0",
+    "aws-sdk-mock": "^1.7.0"
   }
 }

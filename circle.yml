@@ -9,5 +9,3 @@ dependencies:
 test:
   override:
     - yarn test:cover
-  post:
-    - yarn coveralls
