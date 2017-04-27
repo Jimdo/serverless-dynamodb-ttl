@@ -18,7 +18,7 @@ Add the npm package to your project:
 $ yarn add serverless-dynamodb-ttl
 
 # Via npm
-$ npm instal serverless-dynamodb-ttl --save
+$ npm install serverless-dynamodb-ttl --save
 ```
 
 Add the plugin to your `serverless.yml`:
