@@ -8,6 +8,7 @@
   "scripts": {
     "test": "jest test",
     "test:cover": "jest test --coverage",
+    "pretest": "standard | snazzy",
     "coveralls": "cat ./coverage/lcov.info | coveralls",
     "lint": "standard | snazzy"
   },

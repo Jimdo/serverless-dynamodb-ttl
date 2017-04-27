@@ -51,19 +51,19 @@ Feel free to use the code, it's released using the [MIT license](https://github.
 
 ## Contribution
 
-Run unit tests
+You are more than welcome to contribute to this project! 😘
+
+To make sure you have a pleasant experience, please read our [code of conduct](CODE_OF_CONDUCT.md). It outlines our core values and believes and will make working together a happier experience.
+
+### Run the tests
+
 ```bash
+# Via yarn
 $ yarn test
-# or
+
+# Via npm
 $ npm test
 ```
 
-Lint code
-```bash
-$ yarn lint
-# or
-$ npm lint
-```
-
-Feel free to contribute to this project! Thanks 😘
+This will also run [standardjs](https://standardjs.com/) to ensure the changes match the desired code style.
 
