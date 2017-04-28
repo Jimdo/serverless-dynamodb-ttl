@@ -18,7 +18,6 @@ deployment:
   release:
     tag: /v[0-9]+(\.[0-9]+)*/
     commands:
-      - yarn add dot-json
       - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/serverless-dynamodb-ttl/.npmrc
-      - dot-json package.json version ${CIRCLE_TAG:1}
-      - yarn publish
+      - $(yarn bin)/dot-json package.json version ${CIRCLE_TAG:1}
+      - npm publish
