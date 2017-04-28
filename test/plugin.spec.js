@@ -8,58 +8,128 @@ describe('Plugin', () => {
     AWS.restore('DynamoDB')
   })
 
-  it('reads configuration', () => {
-    const config = {
-      cli: { log: () => {} },
-      service: {
-        custom: {
-          dynamodb: {
-            ttl: [
-              {
-                table: 'my-table-1',
-                field: 'my-field-1'
-              },
-              {
-                table: 'my-table-2',
-                field: 'my-field-2'
-              }
-            ]
+  describe('Configuration', () => {
+    it('Reads configuration', () => {
+      const config = {
+        cli: { log: () => {} },
+        service: {
+          custom: {
+            dynamodb: {
+              ttl: [
+                { table: 'my-table-1', field: 'my-field-1' },
+                { table: 'my-table-2', field: 'my-field-2' }
+              ]
+            }
           }
         }
       }
-    }
 
-    const test = new Plugin(config)
+      const test = new Plugin(config)
 
-    expect(test.configuration()).toContainEqual({ table: 'my-table-1', field: 'my-field-1' })
-    expect(test.configuration()).toContainEqual({ table: 'my-table-2', field: 'my-field-2' })
-  })
+      expect(test.configuration()).toContainEqual({ table: 'my-table-1', field: 'my-field-1' })
+      expect(test.configuration()).toContainEqual({ table: 'my-table-2', field: 'my-field-2' })
+    })
 
-  it('Works without configuration', () => {
-    let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
-    let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
+    it('Skips on noDeploy', () => {
+      let log = jest.fn()
 
-    AWS.mock('DynamoDB', 'describeTimeToLive', dynamoDBdescribeTimeToLiveSpy)
-    AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
+      const config = { cli: { log }, service: { } }
+      return new Plugin(config, { noDeploy: true }).afterDeploy().then(
+        () => expect(log).toBeCalledWith('Skipping TTL setting(s) for DynamoDB: noDeploy')
+      )
+    })
 
-    const config = {
-      cli: { log: () => {} },
-      service: {
-        custom: {
-          dynamodb: { }
+    it('Skips when no custom.dynamodb.ttl is found', () => {
+      let log = jest.fn()
+      let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
+      let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
+
+      AWS.mock('DynamoDB', 'describeTimeToLive', dynamoDBdescribeTimeToLiveSpy)
+      AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
+
+      const config = {
+        cli: { log },
+        service: { custom: { dynamodb: { } } }
+      }
+
+      return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
+        () => {
+          expect(log).toBeCalledWith('Skipping TTL setting(s) for DynamoDB: no configuration found')
+          expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(0)
+          expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(0)
         }
-      }
-    }
+      )
+    })
 
-    return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
-      () => {
-        expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(0)
-        expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(0)
+    it('Skips when no custom.dynamodb is found', () => {
+      let log = jest.fn()
+      let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
+      let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
+
+      AWS.mock('DynamoDB', 'describeTimeToLive', dynamoDBdescribeTimeToLiveSpy)
+      AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
+
+      const config = {
+        cli: { log },
+        service: { custom: { } }
       }
-    )
+
+      return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
+        () => {
+          expect(log).toBeCalledWith('Skipping TTL setting(s) for DynamoDB: no configuration found')
+          expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(0)
+          expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(0)
+        }
+      )
+    })
+
+    it('Skips when no custom is found', () => {
+      let log = jest.fn()
+      let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
+      let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
+
+      AWS.mock('DynamoDB', 'describeTimeToLive', dynamoDBdescribeTimeToLiveSpy)
+      AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
+
+      const config = {
+        cli: { log },
+        service: { }
+      }
+
+      return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
+        () => {
+          expect(log).toBeCalledWith('Skipping TTL setting(s) for DynamoDB: no configuration found')
+          expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(0)
+          expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(0)
+        }
+      )
+    })
+
+    it('Skips when custom.dynamodb.ttl is not an array', () => {
+      let log = jest.fn()
+      let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
+      let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
+
+      AWS.mock('DynamoDB', 'describeTimeToLive', dynamoDBdescribeTimeToLiveSpy)
+      AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
+
+      const config = {
+        cli: { log },
+        service: { custom: { dynamodb: { ttl: { invalid: true } } } }
+      }
+
+      return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
+        () => {
+          expect(log).toBeCalledWith('Skipping TTL setting(s) for DynamoDB: invalid configuration found')
+          expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(0)
+          expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(0)
+        }
+      )
+    })
   })
 
   it('Updates TTL setting if not alreadt set', () => {
+    let log = jest.fn()
     let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, { TimeToLiveDescription: { TimeToLiveStatus: false } }))
     let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
 
@@ -67,23 +137,17 @@ describe('Plugin', () => {
     AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
 
     const config = {
-      cli: { log: () => {} },
+      cli: { log },
       service: {
         custom: {
-          dynamodb: {
-            ttl: [
-              {
-                table: 'my-table-1',
-                field: 'my-field-1'
-              }
-            ]
-          }
+          dynamodb: { ttl: [ { table: 'my-table-1', field: 'my-field-1' } ] }
         }
       }
     }
 
     return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
       () => {
+        expect(log).toBeCalledWith('Enabling TTL setting(s) for DynamoDB')
         expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(1)
         expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(1)
       }
@@ -102,12 +166,7 @@ describe('Plugin', () => {
       service: {
         custom: {
           dynamodb: {
-            ttl: [
-              {
-                table: 'my-table-1',
-                field: 'my-field-1'
-              }
-            ]
+            ttl: [ { table: 'my-table-1', field: 'my-field-1' } ]
           }
         }
       }
@@ -134,14 +193,8 @@ describe('Plugin', () => {
         custom: {
           dynamodb: {
             ttl: [
-              {
-                table: 'my-table-1',
-                field: 'my-field-1'
-              },
-              {
-                table: 'my-table-1',
-                field: 'my-field-1'
-              }
+              { table: 'my-table-1', field: 'my-field-1' },
+              { table: 'my-table-1', field: 'my-field-1' }
             ]
           }
         }
@@ -169,14 +222,8 @@ describe('Plugin', () => {
         custom: {
           dynamodb: {
             ttl: [
-              {
-                table: 'my-table-1',
-                field: 'my-field-1'
-              },
-              {
-                table: 'my-table-1',
-                field: 'my-field-1'
-              }
+              { table: 'my-table-1', field: 'my-field-1' },
+              { table: 'my-table-1', field: 'my-field-1' }
             ]
           }
         }
@@ -207,14 +254,8 @@ describe('Plugin', () => {
         custom: {
           dynamodb: {
             ttl: [
-              {
-                table: 'my-table-1',
-                field: 'my-field-1'
-              },
-              {
-                table: 'my-table-1',
-                field: 'my-field-1'
-              }
+              { table: 'my-table-1', field: 'my-field-1' },
+              { table: 'my-table-1', field: 'my-field-1' }
             ]
           }
         }

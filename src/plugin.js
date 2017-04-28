@@ -1,7 +1,8 @@
 'use strict'
 
-const AWS = require('aws-sdk')
+const assert = require('assert')
 const util = require('util')
+const AWS = require('aws-sdk')
 
 class Plugin {
   constructor (serverless, options) {
@@ -15,29 +16,25 @@ class Plugin {
     }
   }
 
+  validate () {
+    assert(this.options && !this.options.noDeploy, 'noDeploy')
+    assert(this.configuration().constructor === Array, 'invalid configuration found')
+    assert(this.configuration().length > 0, 'no configuration found')
+  }
+
   afterDeploy () {
-    if (typeof this.options.noDeploy !== 'undefined' && this.options.noDeploy) {
-      return Promise.resolve()
-    }
-
-    const list = this.configuration()
-
-    if (list.length === 0) {
-      this.serverless.cli.log('Skipping TTL setting(s) for DynamoDB: no configuration found')
-
-      return Promise.resolve()
-    }
-
-    this.serverless.cli.log('Enabling TTL setting(s) for DynamoDB')
-
-    return Promise.all(
-      this.configuration().map(
+    return Promise.resolve().then(
+      this.validate.bind(this)
+    ).then(
+      () => this.serverless.cli.log('Enabling TTL setting(s) for DynamoDB')
+    ).then(
+      () => this.configuration().map(
         data => this.check(data.table).then(
           enabled => enabled || this.enable(data)
         )
       )
     ).catch(
-      error => this.serverless.cli.log(util.format('Failed to set TTL for DynamoDB: %s', error))
+      err => this.serverless.cli.log(util.format('Skipping TTL setting(s) for DynamoDB: %s', err.message))
     )
   }
 
@@ -64,8 +61,10 @@ class Plugin {
   }
 
   configuration () {
-    if (this.serverless && this.serverless.service && this.serverless.service.custom && this.serverless.service.custom.dynamodb) {
+    try {
       return this.serverless.service.custom.dynamodb.ttl || []
+    } catch (e) {
+      return []
     }
   }
 }
