@@ -1,6 +1,5 @@
 {
   "name": "serverless-dynamodb-ttl",
-  "version": "0.0.4",
   "description": "Serverless plugin to configure DynamoDB TTL",
   "main": "src/plugin.js",
   "license": "MIT",
@@ -28,10 +27,7 @@
   },
   "homepage": "https://github.com/Jimdo/serverless-dynamodb-ttl#readme",
   "dependencies": {
-    "coveralls": "^2.13.0",
-    "jest": "^19.0.2",
-    "snazzy": "^7.0.0",
-    "standard": "^10.0.2"
+    "aws-sdk": "^2.45.0"
   },
   "standard": {
     "envs": [
@@ -44,7 +40,10 @@
     ]
   },
   "devDependencies": {
-    "aws-sdk": "^2.45.0",
+    "coveralls": "^2.13.0",
+    "jest": "^19.0.2",
+    "snazzy": "^7.0.0",
+    "standard": "^10.0.2",
     "aws-sdk-mock": "^1.7.0"
   }
 }
