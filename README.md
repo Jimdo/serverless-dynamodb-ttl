@@ -38,7 +38,7 @@ custom:
         field: your-ttl-property-name
 ```
 
-That's it! After the next deployment serverless will make sure to configure your TTL property in DynamoDB.
+That's it! After the next deployment (`sls deploy`) serverless will configure your TTL properties in DynamoDB.
 
 ## License
 

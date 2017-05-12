@@ -13,6 +13,10 @@ describe('Plugin', () => {
       const config = {
         cli: { log: () => {} },
         service: {
+          provider: {
+            name: 'aws',
+            region: 'us-east-1'
+          },
           custom: {
             dynamodb: {
               ttl: [
@@ -26,16 +30,103 @@ describe('Plugin', () => {
 
       const test = new Plugin(config)
 
-      expect(test.configuration()).toContainEqual({ table: 'my-table-1', field: 'my-field-1' })
-      expect(test.configuration()).toContainEqual({ table: 'my-table-2', field: 'my-field-2' })
+      expect(test.list()).toContainEqual({ table: 'my-table-1', field: 'my-field-1' })
+      expect(test.list()).toContainEqual({ table: 'my-table-2', field: 'my-field-2' })
     })
 
     it('Skips on noDeploy', () => {
       let log = jest.fn()
 
-      const config = { cli: { log }, service: { } }
+      const config = {
+        cli: { log },
+        service: {
+          provider: {
+            name: 'aws',
+            region: 'us-east-1'
+          }
+        }
+      }
+
       return new Plugin(config, { noDeploy: true }).afterDeploy().then(
-        () => expect(log).toBeCalledWith('Skipping TTL setting(s) for DynamoDB: noDeploy')
+        () => expect(log).toBeCalledWith('Skipping TTL setting(s) for DynamoDB: Used --noDeploy flag!')
+      )
+    })
+
+    it('Skips on non-aws provider', () => {
+      let log = jest.fn()
+
+      const config = {
+        cli: { log },
+        service: {
+          provider: {
+            name: 'google',
+            region: 'us-east-1'
+          }
+        }
+      }
+
+      return new Plugin(config, { }).afterDeploy().then(
+        () => expect(log).toBeCalledWith('Skipping TTL setting(s) for DynamoDB: Only supported for AWS provider!')
+      )
+    })
+
+    it('Use default service region', () => {
+      let log = jest.fn()
+      let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, { TimeToLiveDescription: { TimeToLiveStatus: false } }))
+      let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
+
+      AWS.mock('DynamoDB', 'describeTimeToLive', dynamoDBdescribeTimeToLiveSpy)
+      AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
+
+      const config = {
+        cli: { log },
+        service: {
+          provider: {
+            name: 'aws',
+            region: 'us-example-1'
+          },
+          custom: {
+            dynamodb: { ttl: [ { table: 'my-table-1', field: 'my-field-1' } ] }
+          }
+        }
+      }
+
+      return new Plugin(config, { }).afterDeploy().then(
+        () => {
+          expect(log).toBeCalledWith('Enabling TTL setting(s) for DynamoDB (us-example-1)')
+          expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(1)
+          expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(1)
+        }
+      )
+    })
+
+    it('Use custom region with --region', () => {
+      let log = jest.fn()
+      let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, { TimeToLiveDescription: { TimeToLiveStatus: false } }))
+      let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
+
+      AWS.mock('DynamoDB', 'describeTimeToLive', dynamoDBdescribeTimeToLiveSpy)
+      AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
+
+      const config = {
+        cli: { log },
+        service: {
+          provider: {
+            name: 'aws',
+            region: 'us-example-1'
+          },
+          custom: {
+            dynamodb: { ttl: [ { table: 'my-table-1', field: 'my-field-1' } ] }
+          }
+        }
+      }
+
+      return new Plugin(config, { region: 'us-awesome-1' }).afterDeploy().then(
+        () => {
+          expect(log).toBeCalledWith('Enabling TTL setting(s) for DynamoDB (us-awesome-1)')
+          expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(1)
+          expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(1)
+        }
       )
     })
 
@@ -49,12 +140,20 @@ describe('Plugin', () => {
 
       const config = {
         cli: { log },
-        service: { custom: { dynamodb: { } } }
+        service: {
+          provider: {
+            name: 'aws',
+            region: 'us-east-1'
+          },
+          custom: {
+            dynamodb: { }
+          }
+        }
       }
 
       return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
         () => {
-          expect(log).toBeCalledWith('Skipping TTL setting(s) for DynamoDB: no configuration found')
+          expect(log).toBeCalledWith('Skipping TTL setting(s) for DynamoDB: No configuration found!')
           expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(0)
           expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(0)
         }
@@ -71,12 +170,18 @@ describe('Plugin', () => {
 
       const config = {
         cli: { log },
-        service: { custom: { } }
+        service: {
+          provider: {
+            name: 'aws',
+            region: 'us-east-1'
+          },
+          custom: { }
+        }
       }
 
       return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
         () => {
-          expect(log).toBeCalledWith('Skipping TTL setting(s) for DynamoDB: no configuration found')
+          expect(log).toBeCalledWith('Skipping TTL setting(s) for DynamoDB: No configuration found!')
           expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(0)
           expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(0)
         }
@@ -93,12 +198,17 @@ describe('Plugin', () => {
 
       const config = {
         cli: { log },
-        service: { }
+        service: {
+          provider: {
+            name: 'aws',
+            region: 'us-east-1'
+          }
+        }
       }
 
       return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
         () => {
-          expect(log).toBeCalledWith('Skipping TTL setting(s) for DynamoDB: no configuration found')
+          expect(log).toBeCalledWith('Skipping TTL setting(s) for DynamoDB: No configuration found!')
           expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(0)
           expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(0)
         }
@@ -115,12 +225,17 @@ describe('Plugin', () => {
 
       const config = {
         cli: { log },
-        service: { custom: { dynamodb: { ttl: { invalid: true } } } }
+        service: {
+          provider: {
+            name: 'aws',
+            region: 'us-east-1'
+          },
+          custom: { dynamodb: { ttl: { invalid: true } } } }
       }
 
       return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
         () => {
-          expect(log).toBeCalledWith('Skipping TTL setting(s) for DynamoDB: invalid configuration found')
+          expect(log).toBeCalledWith('Skipping TTL setting(s) for DynamoDB: Invalid configuration found!')
           expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(0)
           expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(0)
         }
@@ -139,6 +254,10 @@ describe('Plugin', () => {
     const config = {
       cli: { log },
       service: {
+        provider: {
+          name: 'aws',
+          region: 'us-east-1'
+        },
         custom: {
           dynamodb: { ttl: [ { table: 'my-table-1', field: 'my-field-1' } ] }
         }
@@ -147,7 +266,7 @@ describe('Plugin', () => {
 
     return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
       () => {
-        expect(log).toBeCalledWith('Enabling TTL setting(s) for DynamoDB')
+        expect(log).toBeCalledWith('Enabling TTL setting(s) for DynamoDB (eu-west-1)')
         expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(1)
         expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(1)
       }
@@ -164,6 +283,10 @@ describe('Plugin', () => {
     const config = {
       cli: { log: () => {} },
       service: {
+        provider: {
+          name: 'aws',
+          region: 'us-east-1'
+        },
         custom: {
           dynamodb: {
             ttl: [ { table: 'my-table-1', field: 'my-field-1' } ]
@@ -190,6 +313,10 @@ describe('Plugin', () => {
     const config = {
       cli: { log: () => {} },
       service: {
+        provider: {
+          name: 'aws',
+          region: 'us-east-1'
+        },
         custom: {
           dynamodb: {
             ttl: [
@@ -219,6 +346,10 @@ describe('Plugin', () => {
     const config = {
       cli: { log: () => {} },
       service: {
+        provider: {
+          name: 'aws',
+          region: 'us-east-1'
+        },
         custom: {
           dynamodb: {
             ttl: [
@@ -251,6 +382,10 @@ describe('Plugin', () => {
     const config = {
       cli: { log: () => {} },
       service: {
+        provider: {
+          name: 'aws',
+          region: 'us-east-1'
+        },
         custom: {
           dynamodb: {
             ttl: [
