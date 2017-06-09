@@ -26,9 +26,7 @@
     "url": "https://github.com/Jimdo/serverless-dynamodb-ttl/issues"
   },
   "homepage": "https://github.com/Jimdo/serverless-dynamodb-ttl#readme",
-  "dependencies": {
-    "aws-sdk": "^2.45.0"
-  },
+  "dependencies": {},
   "standard": {
     "envs": [
       "node",
@@ -40,10 +38,10 @@
     ]
   },
   "devDependencies": {
-    "aws-sdk-mock": "^1.7.0",
     "coveralls": "^2.13.0",
     "dot-json": "^1.0.3",
     "jest": "^19.0.2",
+    "sinon": "^2.3.2",
     "snazzy": "^7.0.0",
     "standard": "^10.0.2"
   }

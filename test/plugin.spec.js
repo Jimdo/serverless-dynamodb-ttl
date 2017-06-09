@@ -1,21 +1,32 @@
 'use strict'
 
-var AWS = require('aws-sdk-mock')
+const sinon = require('sinon')
 const Plugin = require('../')
 
 describe('Plugin', () => {
+  let getProvider = null
+  let provider = {
+    request: () => true
+  }
+  let providerMock = null
+
+  beforeEach(() => {
+    providerMock = sinon.mock(provider)
+    getProvider = sinon.stub().returns(provider)
+  })
+
   afterEach(() => {
-    AWS.restore('DynamoDB')
+    providerMock.restore()
   })
 
   describe('Configuration', () => {
     it('Reads configuration', () => {
       const config = {
         cli: { log: () => {} },
+        region: 'us-east-1',
         service: {
           provider: {
-            name: 'aws',
-            region: 'us-east-1'
+            name: 'aws'
           },
           custom: {
             dynamodb: {
@@ -25,7 +36,8 @@ describe('Plugin', () => {
               ]
             }
           }
-        }
+        },
+        getProvider
       }
 
       const test = new Plugin(config)
@@ -39,12 +51,13 @@ describe('Plugin', () => {
 
       const config = {
         cli: { log },
+        region: 'us-east-1',
         service: {
           provider: {
-            name: 'aws',
-            region: 'us-east-1'
+            name: 'aws'
           }
-        }
+        },
+        getProvider
       }
 
       return new Plugin(config, { noDeploy: true }).afterDeploy().then(
@@ -57,12 +70,13 @@ describe('Plugin', () => {
 
       const config = {
         cli: { log },
+        region: 'us-east-1',
         service: {
           provider: {
-            name: 'google',
-            region: 'us-east-1'
+            name: 'google'
           }
-        }
+        },
+        getProvider
       }
 
       return new Plugin(config, { }).afterDeploy().then(
@@ -70,252 +84,207 @@ describe('Plugin', () => {
       )
     })
 
-    it('Use default service region', () => {
+    it('Use the region provided in options by default', () => {
       let log = jest.fn()
-      let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, { TimeToLiveDescription: { TimeToLiveStatus: false } }))
-      let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
 
-      AWS.mock('DynamoDB', 'describeTimeToLive', dynamoDBdescribeTimeToLiveSpy)
-      AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
+      providerMock.expects('request')
+        .withArgs('DynamoDB', 'describeTimeToLive')
+        .returns(Promise.resolve({ TimeToLiveDescription: { TimeToLiveStatus: false } }))
+      providerMock.expects('request')
+        .withArgs('DynamoDB', 'updateTimeToLive')
+        .returns(Promise.resolve())
 
       const config = {
         cli: { log },
         service: {
           provider: {
-            name: 'aws',
-            region: 'us-example-1'
+            name: 'aws'
           },
           custom: {
             dynamodb: { ttl: [ { table: 'my-table-1', field: 'my-field-1' } ] }
           }
-        }
+        },
+        getProvider
       }
 
-      return new Plugin(config, { }).afterDeploy().then(
+      return new Plugin(config, { region: 'us-example-1' }).afterDeploy().then(
         () => {
           expect(log).toBeCalledWith('Enabling TTL setting(s) for DynamoDB (us-example-1)')
-          expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(1)
-          expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(1)
-        }
-      )
-    })
-
-    it('Use custom region with --region', () => {
-      let log = jest.fn()
-      let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, { TimeToLiveDescription: { TimeToLiveStatus: false } }))
-      let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
-
-      AWS.mock('DynamoDB', 'describeTimeToLive', dynamoDBdescribeTimeToLiveSpy)
-      AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
-
-      const config = {
-        cli: { log },
-        service: {
-          provider: {
-            name: 'aws',
-            region: 'us-example-1'
-          },
-          custom: {
-            dynamodb: { ttl: [ { table: 'my-table-1', field: 'my-field-1' } ] }
-          }
-        }
-      }
-
-      return new Plugin(config, { region: 'us-awesome-1' }).afterDeploy().then(
-        () => {
-          expect(log).toBeCalledWith('Enabling TTL setting(s) for DynamoDB (us-awesome-1)')
-          expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(1)
-          expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(1)
         }
       )
     })
 
     it('Skips when no custom.dynamodb.ttl is found', () => {
       let log = jest.fn()
-      let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
-      let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
 
-      AWS.mock('DynamoDB', 'describeTimeToLive', dynamoDBdescribeTimeToLiveSpy)
-      AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
+      providerMock.expects('request').never()
 
       const config = {
         cli: { log },
+        region: 'us-east-1',
         service: {
           provider: {
-            name: 'aws',
-            region: 'us-east-1'
+            name: 'aws'
           },
           custom: {
             dynamodb: { }
           }
-        }
+        },
+        getProvider
       }
 
       return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
         () => {
           expect(log).toBeCalledWith('Skipping TTL setting(s) for DynamoDB: No configuration found!')
-          expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(0)
-          expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(0)
         }
       )
     })
 
     it('Skips when no custom.dynamodb is found', () => {
       let log = jest.fn()
-      let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
-      let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
 
-      AWS.mock('DynamoDB', 'describeTimeToLive', dynamoDBdescribeTimeToLiveSpy)
-      AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
+      providerMock.expects('request').never()
 
       const config = {
         cli: { log },
+        region: 'us-east-1',
         service: {
           provider: {
-            name: 'aws',
-            region: 'us-east-1'
+            name: 'aws'
           },
           custom: { }
-        }
+        },
+        getProvider
       }
 
       return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
         () => {
           expect(log).toBeCalledWith('Skipping TTL setting(s) for DynamoDB: No configuration found!')
-          expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(0)
-          expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(0)
         }
       )
     })
 
     it('Skips when no custom is found', () => {
       let log = jest.fn()
-      let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
-      let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
 
-      AWS.mock('DynamoDB', 'describeTimeToLive', dynamoDBdescribeTimeToLiveSpy)
-      AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
+      providerMock.expects('request').never()
 
       const config = {
         cli: { log },
+        region: 'us-east-1',
         service: {
           provider: {
-            name: 'aws',
-            region: 'us-east-1'
+            name: 'aws'
           }
-        }
+        },
+        getProvider
       }
 
       return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
         () => {
           expect(log).toBeCalledWith('Skipping TTL setting(s) for DynamoDB: No configuration found!')
-          expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(0)
-          expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(0)
         }
       )
     })
 
     it('Skips when custom.dynamodb.ttl is not an array', () => {
       let log = jest.fn()
-      let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
-      let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
 
-      AWS.mock('DynamoDB', 'describeTimeToLive', dynamoDBdescribeTimeToLiveSpy)
-      AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
+      providerMock.expects('request').never()
 
       const config = {
         cli: { log },
+        region: 'us-east-1',
         service: {
           provider: {
-            name: 'aws',
-            region: 'us-east-1'
+            name: 'aws'
           },
-          custom: { dynamodb: { ttl: { invalid: true } } } }
+          custom: { dynamodb: { ttl: { invalid: true } } }
+        },
+        getProvider
       }
 
       return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
         () => {
           expect(log).toBeCalledWith('Skipping TTL setting(s) for DynamoDB: Invalid configuration found!')
-          expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(0)
-          expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(0)
         }
       )
     })
   })
 
-  it('Updates TTL setting if not alreadt set', () => {
+  it('Updates TTL setting if not already set', () => {
     let log = jest.fn()
-    let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, { TimeToLiveDescription: { TimeToLiveStatus: false } }))
-    let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
 
-    AWS.mock('DynamoDB', 'describeTimeToLive', dynamoDBdescribeTimeToLiveSpy)
-    AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
+    providerMock.expects('request')
+      .withArgs('DynamoDB', 'describeTimeToLive')
+      .returns(Promise.resolve({ TimeToLiveDescription: { TimeToLiveStatus: false } }))
+    providerMock.expects('request')
+      .withArgs('DynamoDB', 'updateTimeToLive')
+      .returns(Promise.resolve())
 
     const config = {
       cli: { log },
+      region: 'us-east-1',
       service: {
         provider: {
-          name: 'aws',
-          region: 'us-east-1'
+          name: 'aws'
         },
         custom: {
           dynamodb: { ttl: [ { table: 'my-table-1', field: 'my-field-1' } ] }
         }
-      }
+      },
+      getProvider
     }
 
     return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
       () => {
         expect(log).toBeCalledWith('Enabling TTL setting(s) for DynamoDB (eu-west-1)')
-        expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(1)
-        expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(1)
       }
     )
   })
 
   it('Does not update TTL configuration if already set', () => {
-    let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, { TimeToLiveDescription: { TimeToLiveStatus: 'ENABLED' } }))
-    let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
-
-    AWS.mock('DynamoDB', 'describeTimeToLive', dynamoDBdescribeTimeToLiveSpy)
-    AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
+    providerMock.expects('request')
+      .withArgs('DynamoDB', 'describeTimeToLive')
+      .returns(Promise.resolve({ TimeToLiveDescription: { TimeToLiveStatus: 'ENABLED' } }))
+    providerMock.expects('request')
+      .withArgs('DynamoDB', 'updateTimeToLive')
+      .never()
 
     const config = {
       cli: { log: () => {} },
+      region: 'us-east-1',
       service: {
         provider: {
-          name: 'aws',
-          region: 'us-east-1'
+          name: 'aws'
         },
         custom: {
           dynamodb: {
             ttl: [ { table: 'my-table-1', field: 'my-field-1' } ]
           }
         }
-      }
+      },
+      getProvider
     }
 
-    return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
-      () => {
-        expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(1)
-        expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(0)
-      }
-    )
+    return new Plugin(config, { region: 'eu-west-1' }).afterDeploy()
   })
 
   it('Does work for multiple table configuration #1', () => {
-    let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, { TimeToLiveDescription: { TimeToLiveStatus: 'ENABLED' } }))
-    let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
-
-    AWS.mock('DynamoDB', 'describeTimeToLive', dynamoDBdescribeTimeToLiveSpy)
-    AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
+    providerMock.expects('request')
+      .withArgs('DynamoDB', 'describeTimeToLive')
+      .twice()
+      .returns(Promise.resolve({ TimeToLiveDescription: { TimeToLiveStatus: 'ENABLED' } }))
+    providerMock.expects('request')
+      .withArgs('DynamoDB', 'updateTimeToLive')
+      .never()
 
     const config = {
       cli: { log: () => {} },
+      region: 'us-east-1',
       service: {
         provider: {
-          name: 'aws',
-          region: 'us-east-1'
+          name: 'aws'
         },
         custom: {
           dynamodb: {
@@ -325,30 +294,29 @@ describe('Plugin', () => {
             ]
           }
         }
-      }
+      },
+      getProvider
     }
 
-    return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
-      () => {
-        expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(2)
-        expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(0)
-      }
-    )
+    return new Plugin(config, { region: 'eu-west-1' }).afterDeploy()
   })
 
   it('Does work for multiple table configuration #2', () => {
-    let dynamoDBdescribeTimeToLiveSpy = jest.fn((_, cb) => cb(null, { TimeToLiveDescription: { TimeToLiveStatus: false } }))
-    let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
-
-    AWS.mock('DynamoDB', 'describeTimeToLive', dynamoDBdescribeTimeToLiveSpy)
-    AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
+    providerMock.expects('request')
+      .withArgs('DynamoDB', 'describeTimeToLive')
+      .twice()
+      .returns(Promise.resolve({ TimeToLiveDescription: { TimeToLiveStatus: false } }))
+    providerMock.expects('request')
+      .withArgs('DynamoDB', 'updateTimeToLive')
+      .twice()
+      .returns(Promise.resolve())
 
     const config = {
       cli: { log: () => {} },
+      region: 'us-east-1',
       service: {
         provider: {
-          name: 'aws',
-          region: 'us-east-1'
+          name: 'aws'
         },
         custom: {
           dynamodb: {
@@ -358,33 +326,29 @@ describe('Plugin', () => {
             ]
           }
         }
-      }
+      },
+      getProvider
     }
 
-    return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
-      () => {
-        expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(2)
-        expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(2)
-      }
-    )
+    return new Plugin(config, { region: 'eu-west-1' }).afterDeploy()
   })
 
   it('Does work for multiple table configuration #3', () => {
-    let dynamoDBdescribeTimeToLiveSpy = jest.fn()
-        .mockImplementationOnce((_, cb) => cb(null, { TimeToLiveDescription: { TimeToLiveStatus: false } }))
-        .mockImplementationOnce((_, cb) => cb(null, { TimeToLiveDescription: { TimeToLiveStatus: 'ENABLED' } }))
-
-    let dynamoDBupdateTimeToLiveSpy = jest.fn((_, cb) => cb(null, ''))
-
-    AWS.mock('DynamoDB', 'describeTimeToLive', dynamoDBdescribeTimeToLiveSpy)
-    AWS.mock('DynamoDB', 'updateTimeToLive', dynamoDBupdateTimeToLiveSpy)
+    providerMock.expects('request')
+      .withArgs('DynamoDB', 'describeTimeToLive')
+      .returns(Promise.resolve({ TimeToLiveDescription: { TimeToLiveStatus: false } }))
+      .returns(Promise.resolve({ TimeToLiveDescription: { TimeToLiveStatus: 'ENABLED' } }))
+    providerMock.expects('request')
+      .withArgs('DynamoDB', 'updateTimeToLive')
+      .once()
+      .returns(Promise.resolve())
 
     const config = {
       cli: { log: () => {} },
+      region: 'us-east-1',
       service: {
         provider: {
-          name: 'aws',
-          region: 'us-east-1'
+          name: 'aws'
         },
         custom: {
           dynamodb: {
@@ -394,14 +358,10 @@ describe('Plugin', () => {
             ]
           }
         }
-      }
+      },
+      getProvider
     }
 
-    return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
-      () => {
-        expect(dynamoDBdescribeTimeToLiveSpy).toHaveBeenCalledTimes(2)
-        expect(dynamoDBupdateTimeToLiveSpy).toHaveBeenCalledTimes(1)
-      }
-    )
+    return new Plugin(config, { region: 'eu-west-1' }).afterDeploy()
   })
 })
