@@ -48,6 +48,8 @@ Feel free to use the code, it's released using the [MIT license](https://github.
 
 - [Oleksii Zeleniuk](https://github.com/alexzelenuyk)
 - [Sebastian Müller](https://github.com/sbstjn)
+- [Robin Drexler](https://github.com/robin-drexler)
+- [Samuel Marks](https://github.com/sammarks)
 
 ## Contribution
 
