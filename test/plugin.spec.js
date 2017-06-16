@@ -6,7 +6,10 @@ const Plugin = require('../')
 describe('Plugin', () => {
   let getProvider = null
   let provider = {
-    request: () => true
+    request: () => true,
+    sdk: {
+      VERSION: '2.21.0'
+    }
   }
   let providerMock = null
 
@@ -110,6 +113,43 @@ describe('Plugin', () => {
       return new Plugin(config, { region: 'us-example-1' }).afterDeploy().then(
         () => {
           expect(log).toBeCalledWith('Enabling TTL setting(s) for DynamoDB (us-example-1)')
+        }
+      )
+    })
+
+    it('Skips for unsupported aws-sdk versions', () => {
+      let log = jest.fn()
+
+      let unsupportedProvider = {
+        request: () => true,
+        sdk: {
+          VERSION: '2.20.0'
+        }
+      }
+
+      let unsupportedProviderMock = sinon.mock(unsupportedProvider)
+      let unsupportedGetProvider = sinon.stub().returns(unsupportedProvider)
+
+      unsupportedProviderMock.expects('request').never()
+      const config = {
+        cli: { log },
+        region: 'us-east-1',
+        version: '1.13.1',
+        service: {
+          provider: {
+            name: 'aws'
+          },
+          custom: {
+            dynamodb: { ttl: [ { table: 'my-table-1', field: 'my-field-1' } ] }
+          }
+        },
+        getProvider: unsupportedGetProvider
+      }
+
+      return new Plugin(config, { region: 'eu-west-1' }).afterDeploy().then(
+        () => {
+          expect(log).toBeCalledWith('Skipping TTL setting(s) for DynamoDB: Use `aws-sdk` version 2.21.0 or newer!')
+          unsupportedProviderMock.restore()
         }
       )
     })

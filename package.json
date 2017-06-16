@@ -26,7 +26,9 @@
     "url": "https://github.com/Jimdo/serverless-dynamodb-ttl/issues"
   },
   "homepage": "https://github.com/Jimdo/serverless-dynamodb-ttl#readme",
-  "dependencies": {},
+  "dependencies": {
+    "semver-compare": "^1.0.0"
+  },
   "standard": {
     "envs": [
       "node",

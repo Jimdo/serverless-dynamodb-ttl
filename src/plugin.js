@@ -2,12 +2,15 @@
 
 const assert = require('assert')
 const util = require('util')
+const cmp = require('semver-compare')
+
+const MINIMUM_COMPATIBLE_AWSSDK_VERSION = '2.21.0'
 
 class Plugin {
   constructor (serverless, options) {
     this.serverless = serverless
-    this.options = options || {}
     this.provider = serverless.getProvider('aws')
+    this.options = options || {}
 
     this.hooks = {
       'after:deploy:deploy': this.afterDeploy.bind(this)
@@ -20,6 +23,11 @@ class Plugin {
     assert(this.serverless.service.provider, 'Invalid serverless configuration')
     assert(this.serverless.service.provider.name, 'Invalid serverless configuration')
     assert(this.serverless.service.provider.name === 'aws', 'Only supported for AWS provider')
+
+    assert(
+      cmp(this.provider.sdk.VERSION, MINIMUM_COMPATIBLE_AWSSDK_VERSION) > -1,
+      util.format('Use `aws-sdk` version %s or newer', MINIMUM_COMPATIBLE_AWSSDK_VERSION)
+    )
 
     assert(this.options && !this.options.noDeploy, 'Used --noDeploy flag')
     assert(this.list().constructor === Array, 'Invalid configuration found')
