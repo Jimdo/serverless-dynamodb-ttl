@@ -5,6 +5,11 @@
 [![license](https://img.shields.io/github/license/Jimdo/serverless-dynamodb-ttl.svg)](https://github.com/Jimdo/serverless-dynamodb-ttl/blob/master/LICENSE.md)
 [![Coveralls](https://img.shields.io/coveralls/Jimdo/serverless-dynamodb-ttl.svg)](https://coveralls.io/github/Jimdo/serverless-dynamodb-ttl)
 
+## DEPRECATED
+
+AWS CloudFormation supports now TTL, so this plugin for Serverless is useless.
+More information about how to use it in the [AWS documentation](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-dynamodb-table.html#cfn-dynamodb-table-timetolivespecification).
+
 ## About the plugin
 
 It's not possible to use [DynamoDB's TTL feature](https://aws.amazon.com/blogs/aws/new-manage-dynamodb-items-using-time-to-live-ttl/) with CloudFormation yet. Use this plugin to configure TTL for your DynamoDB with [Serverless](https://serverless.com).
