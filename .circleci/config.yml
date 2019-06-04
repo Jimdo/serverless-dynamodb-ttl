@@ -54,7 +54,7 @@ jobs:
           key: yarn-package-{{ checksum "yarn.lock" }}
       - run:
           name: Write NPM token
-          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/serverless-dynamodb-ttl/.npmrc
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/project/.npmrc
       - run:
           name: Bump new version
           command: $(yarn bin)/dot-json package.json version ${CIRCLE_TAG:1}
