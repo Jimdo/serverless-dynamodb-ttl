@@ -1,0 +1,84 @@
+version: 2
+
+release: &release
+  filters:
+    tags:
+      only: /v[0-9]+(\.[0-9]+)*/
+    branches:
+      ignore: /.*/
+
+defaults: &defaults
+  docker:
+    - image: circleci/node:10
+
+jobs:
+  deps:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          key: yarn-package-{{ checksum "yarn.lock" }}
+      - run:
+          name: Install dependencies
+          command: yarn
+      - save_cache:
+          key: yarn-package-{{ checksum "yarn.lock" }}
+          paths:
+            - node_modules
+  lint:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          key: yarn-package-{{ checksum "yarn.lock" }}
+      - run:
+          name: Lint
+          command: yarn lint
+  test:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          key: yarn-package-{{ checksum "yarn.lock" }}
+      - run:
+          name: Unit tests
+          command: yarn test:cover
+      - run:
+          name: Report
+          command: yarn coveralls
+  deploy:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          key: yarn-package-{{ checksum "yarn.lock" }}
+      - run:
+          name: Write NPM token
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/serverless-dynamodb-ttl/.npmrc
+      - run:
+          name: Bump new version
+          command: $(yarn bin)/dot-json package.json version ${CIRCLE_TAG:1}
+      - run:
+          name: Deploy to NPM
+          command: npm publish
+workflows:
+  version: 2
+  main:
+    jobs:
+      - deps
+      - lint:
+          requires:
+            - deps
+      - test:
+          requires:
+            - deps
+      - deploy:
+          <<: *release
+          requires:
+            - test
+            - lint
+experimental:
+  notify:
+    branches:
+      only:
+        - master
