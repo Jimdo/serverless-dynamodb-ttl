@@ -72,6 +72,18 @@ workflows:
       - test:
           requires:
             - deps
+  deploy:
+    jobs:
+      - deps:
+          <<: *release
+      - lint:
+          <<: *release
+          requires:
+            - deps
+      - test:
+          <<: *release
+          requires:
+            - deps
       - deploy:
           <<: *release
           requires:
